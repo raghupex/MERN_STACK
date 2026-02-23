@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Notes</title>
+    <style>
+        :root {
+            --bg: #e0e5ec;
+            --text: #44476a;
+            --card-bg: #e0e5ec;
+            --accent: #6d5dfc;
+            --shadow: 9px 9px 16px rgb(163,177,198,0.6), -9px -9px 16px rgba(255,255,255, 0.5);
+            --inner-shadow: inset 6px 6px 12px #c1c9d7, inset -6px -6px 12px #ffffff;
+        }
+
+        body.dark-mode {
+            --bg: #1a1b1e;
+            --text: #adb5bd;
+            --card-bg: #1a1b1e;
+            --accent: #a59cfd;
+            --shadow: 5px 5px 10px #121214, -5px -5px 10px #222428;
+            --inner-shadow: inset 3px 3px 7px #121214, inset -3px -3px 7px #222428;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.4s ease;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { width: 100%; max-width: 450px; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        /* Inputs & Buttons */
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 12px;
+            background: var(--bg);
+            box-shadow: var(--inner-shadow);
+            color: var(--text);
+            outline: none;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            background: var(--bg);
+            box-shadow: var(--shadow);
+            color: var(--accent);
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:active { box-shadow: var(--inner-shadow); transform: scale(0.98); }
+
+        /* Note Cards */
+        .note-card {
+            background: var(--card-bg);
+            padding: 18px;
+            margin: 20px 0;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: var(--shadow);
+            cursor: grab;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .note-text { flex-grow: 1; font-size: 1rem; transition: 0.3s; }
+        
+        .completed { opacity: 0.5; filter: grayscale(1); }
+        .completed .note-text { text-decoration: line-through; }
+
+        .color-picker {
+            width: 30px; height: 30px; border: none; border-radius: 50%;
+            background: none; cursor: pointer;
+        }
+
+        .del-btn { color: #ff5e5e; background: none; box-shadow: none; font-size: 1.2rem; }
+
+        /* Modal Overlay */
+        #modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal { 
+            background: var(--bg); padding: 30px; border-radius: 20px; 
+            box-shadow: var(--shadow); text-align: center; max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2 style="letter-spacing: 1px;">MEMO<span>.</span></h2>
+        <button id="theme-toggle">✨ Mode</button>
+    </header>
+
+    <input type="text" id="search-box" placeholder="Filter memories...">
+
+    <form id="note-form" style="display: flex; gap: 10px;">
+        <input type="text" id="note-input" placeholder="Type a note..." required>
+        <button type="submit" style="height: 45px;">Add</button>
+    </form>
+
+    <div id="notes-list"></div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <button id="clear-btn">Clear Completed</button>
+    </div>
+</div>
+
+<div id="modal-overlay">
+    <div class="modal">
+        <p>Clear all finished tasks?</p>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <button id="confirm-delete" style="color: #ff5e5e;">Yes</button>
+            <button id="close-modal">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const noteForm = document.getElementById('note-form');
+    const notesList = document.getElementById('notes-list');
+    const modal = document.getElementById('modal-overlay');
+
+    // Add Note Logic
+    noteForm.onsubmit = (e) => {
+        e.preventDefault();
+        const input = document.getElementById('note-input');
+        if(!input.value.trim()) return;
+        
+        const note = document.createElement('div');
+        note.className = 'note-card';
+        note.draggable = true;
+        note.innerHTML = `
+            <input type="checkbox" class="complete-check">
+            <span class="note-text">${input.value}</span>
+            <input type="color" class="color-picker" value="#ffffff">
+            <button class="del-btn">×</button>
+        `;
+        notesList.prepend(note);
+        input.value = '';
+        addDragEvents(note);
+    };
+
+    // Delegation for Actions
+    notesList.addEventListener('click', (e) => {
+        const card = e.target.closest('.note-card');
+        if (!card) return;
+        if (e.target.classList.contains('del-btn')) card.remove();
+        if (e.target.classList.contains('complete-check')) card.classList.toggle('completed');
+    });
+
+    notesList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('color-picker')) {
+            e.target.closest('.note-card').style.backgroundColor = e.target.value;
+        }
+    });
+
+    // Double-click to Edit
+    notesList.ondblclick = (e) => {
+        if (e.target.classList.contains('note-text')) {
+            const span = e.target;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = span.textContent;
+            input.style.boxShadow = 'none'; // cleaner look inside card
+            span.replaceWith(input);
+            input.focus();
+            const finish = () => {
+                const newSpan = document.createElement('span');
+                newSpan.className = 'note-text';
+                newSpan.textContent = input.value || "Untitled";
+                input.replaceWith(newSpan);
+            };
+            input.onblur = finish;
+            input.onkeydown = (k) => k.key === 'Enter' && finish();
+        }
+    };
+
+    // Filter Logic
+    document.getElementById('search-box').oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        document.querySelectorAll('.note-card').forEach(card => {
+            const text = card.querySelector('.note-text').textContent.toLowerCase();
+            card.style.display = text.includes(val) ? 'flex' : 'none';
+        });
+    };
+
+    // Dark Mode
+    document.getElementById('theme-toggle').onclick = () => document.body.classList.toggle('dark-mode');
+
+    // Modal
+    document.getElementById('clear-btn').onclick = () => modal.style.display = 'flex';
+    document.getElementById('close-modal').onclick = () => modal.style.display = 'none';
+    document.getElementById('confirm-delete').onclick = () => {
+        document.querySelectorAll('.completed').forEach(n => n.remove());
+        modal.style.display = 'none';
+    };
+
+    // Drag and Drop Helpers
+    
+    function addDragEvents(note) {
+        note.addEventListener('dragstart', () => note.classList.add('dragging'));
+        note.addEventListener('dragend', () => note.classList.remove('dragging'));
+    }
+
+    notesList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const dragging = document.querySelector('.dragging');
+        const afterElement = [...notesList.querySelectorAll('.note-card:not(.dragging)')].reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = e.clientY - box.top - box.height / 2;
+            return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        
+        afterElement ? notesList.insertBefore(dragging, afterElement) : notesList.appendChild(dragging);
+    });
+</script>
+</body>
+</html>

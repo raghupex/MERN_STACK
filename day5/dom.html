@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Notes Manager</title>
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --text: #1c1e21;
+            --card-bg: #ffffff;
+            --accent: #4a90e2;
+            --danger: #ff4d4d;
+        }
+
+        body.dark-mode {
+            --bg: #18191a;
+            --text: #e4e6eb;
+            --card-bg: #242526;
+            --accent: #2e89ff;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .container { width: 100%; max-width: 500px; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Note Cards */
+        .note-card {
+            background: var(--card-bg);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: grab;
+            transition: transform 0.1s;
+        }
+
+        .note-card.dragging { opacity: 0.5; cursor: grabbing; }
+
+        .note-text { flex-grow: 1; outline: none; border-radius: 4px; padding: 4px; }
+        
+        .completed .note-text {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        /* Controls */
+        #note-form, #search-box { margin-bottom: 15px; width: 100%; display: flex; gap: 8px; }
+        input[type="text"] { flex-grow: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        
+        /* Modal */
+        #modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal { background: var(--card-bg); padding: 20px; border-radius: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Notes</h1>
+        <button id="theme-toggle">🌓 Toggle Mode</button>
+    </header>
+
+    <input type="text" id="search-box" placeholder="🔍 Filter notes...">
+
+    <form id="note-form">
+        <input type="text" id="note-input" placeholder="What's on your mind?" required>
+        <button type="submit">Add Note</button>
+    </form>
+
+    <div id="notes-list">
+        </div>
+
+    <button id="clear-btn" style="margin-top: 20px;">Clear Completed</button>
+</div>
+
+<div id="modal-overlay">
+    <div class="modal">
+        <h3>Are you sure?</h3>
+        <p>This will permanently remove all completed notes.</p>
+        <button id="confirm-delete" style="background: var(--danger); color: white;">Yes, Clear</button>
+        <button id="close-modal">Cancel</button>
+    </div>
+</div>
+
+<script>
+    const noteForm = document.getElementById('note-form');
+    const noteInput = document.getElementById('note-input');
+    const notesList = document.getElementById('notes-list');
+    const searchBox = document.getElementById('search-box');
+    const themeToggle = document.getElementById('theme-toggle');
+    const modal = document.getElementById('modal-overlay');
+
+    // --- 1. Add Note ---
+    noteForm.onsubmit = (e) => {
+        e.preventDefault();
+        createNote(noteInput.value);
+        noteInput.value = '';
+    };
+
+    function createNote(text) {
+        const note = document.createElement('div');
+        note.className = 'note-card';
+        note.draggable = true;
+        note.innerHTML = `
+            <input type="checkbox" class="complete-check">
+            <span class="note-text">${text}</span>
+            <input type="color" class="color-picker" value="#ffffff">
+            <button class="del-btn">✕</button>
+        `;
+        notesList.prepend(note);
+        addDragEvents(note);
+    }
+
+    // --- 2. Event Delegation (Clicks & Colors) ---
+    notesList.addEventListener('click', (e) => {
+        const card = e.target.closest('.note-card');
+        if (!card) return;
+
+        if (e.target.classList.contains('del-btn')) {
+            card.remove();
+        } else if (e.target.classList.contains('complete-check')) {
+            card.classList.toggle('completed');
+        }
+    });
+
+    notesList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('color-picker')) {
+            e.target.closest('.note-card').style.backgroundColor = e.target.value;
+        }
+    });
+
+    // --- 3. Double-Click to Edit ---
+    notesList.ondblclick = (e) => {
+        if (e.target.classList.contains('note-text')) {
+            const span = e.target;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = span.textContent;
+            span.replaceWith(input);
+            input.focus();
+
+            const save = () => {
+                span.textContent = input.value || "Empty Note";
+                input.replaceWith(span);
+            };
+            input.onblur = save;
+            input.onkeydown = (k) => { if (k.key === 'Enter') save(); };
+        }
+    };
+
+    // --- 4. Search / Filter ---
+    searchBox.oninput = () => {
+        const filter = searchBox.value.toLowerCase();
+        document.querySelectorAll('.note-card').forEach(card => {
+            const text = card.querySelector('.note-text').textContent.toLowerCase();
+            card.style.display = text.includes(filter) ? 'flex' : 'none';
+        });
+    };
+
+    // --- 5. Dark Mode ---
+    themeToggle.onclick = () => document.body.classList.toggle('dark-mode');
+
+    // --- 6. Modal Logic ---
+    document.getElementById('clear-btn').onclick = () => modal.style.display = 'flex';
+    document.getElementById('close-modal').onclick = () => modal.style.display = 'none';
+    document.getElementById('confirm-delete').onclick = () => {
+        document.querySelectorAll('.completed').forEach(n => n.remove());
+        modal.style.display = 'none';
+    };
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+    // --- 7. Drag & Drop ---
+    
+    function addDragEvents(note) {
+        note.addEventListener('dragstart', () => note.classList.add('dragging'));
+        note.addEventListener('dragend', () => note.classList.remove('dragging'));
+    }
+
+    notesList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const dragging = document.querySelector('.dragging');
+        const afterElement = getDragAfterElement(notesList, e.clientY);
+        if (afterElement == null) {
+            notesList.appendChild(dragging);
+        } else {
+            notesList.insertBefore(dragging, afterElement);
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const otherCards = [...container.querySelectorAll('.note-card:not(.dragging)')];
+        return otherCards.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+</script>
+
+</body>
+</html>
