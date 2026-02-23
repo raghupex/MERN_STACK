@@ -1,0 +1,78 @@
+{
+  "industry_info": {
+    "kollywood": "Tamil Cinema (Chennai-based)",
+    "sandalwood": "Kannada Cinema (Bengaluru-based)"
+  },
+  "actors": [
+    {
+      "name": "Rajinikanth",
+      "industry": "Kollywood",
+      "status": "Legendary Superstar",
+      "notable_works": ["Jailer", "Enthiran", "Baashha"],
+      "years_active": "1975–Present"
+    },
+    {
+      "name": "Yash",
+      "industry": "Sandalwood",
+      "status": "Pan-India Star",
+      "notable_works": ["K.G.F: Chapter 1 & 2", "Toxic", "Googly"],
+      "years_active": "2007–Present"
+    },
+    {
+      "name": "Thalapathy Vijay",
+      "industry": "Kollywood",
+      "status": "Top Commercial Star",
+      "notable_works": ["Leo", "Mersal", "Ghilli"],
+      "years_active": "1992–Present"
+    },
+    {
+      "name": "Rishab Shetty",
+      "industry": "Sandalwood",
+      "status": "Critically Acclaimed Actor/Director",
+      "notable_works": ["Kantara", "Kantara: A Legend Chapter 0", "Kirik Party"],
+      "years_active": "2012–Present"
+    },
+    {
+      "name": "Suriya",
+      "industry": "Kollywood",
+      "status": "Versatile Leading Man",
+      "notable_works": ["Soorarai Pottru", "Jai Bhim", "Kanguva"],
+      "years_active": "1997–Present"
+    },
+    {
+      "name": "Kichcha Sudeep",
+      "industry": "Sandalwood",
+      "status": "Veteran Performer",
+      "notable_works": ["Eega", "Vikrant Rona", "Huchcha"],
+      "years_active": "1997–Present"
+    },
+    {
+      "name": "Dhanush",
+      "industry": "Kollywood",
+      "status": "Global/Multi-talented Star",
+      "notable_works": ["Asuran", "The Gray Man", "Raayan"],
+      "years_active": "2002–Present"
+    },
+    {
+      "name": "Rakshit Shetty",
+      "industry": "Sandalwood",
+      "status": "Experimental Filmmaker/Actor",
+      "notable_works": ["777 Charlie", "Sapta Saagaradaache Ello", "Ulidavaru Kandanthe"],
+      "years_active": "2010–Present"
+    },
+    {
+      "name": "Sivakarthikeyan",
+      "industry": "Kollywood",
+      "status": "Rising Mass Star",
+      "notable_works": ["Doctor", "Maaveeran", "Amaran"],
+      "years_active": "2012–Present"
+    },
+    {
+      "name": "Dhananjaya",
+      "industry": "Sandalwood",
+      "status": "Acclaimed Lead/Antagonist",
+      "notable_works": ["Tagaru", "Badava Rascal", "Uttarakaanda"],
+      "years_active": "2013–Present"
+    }
+  ]
+}
